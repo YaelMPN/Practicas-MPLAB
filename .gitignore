@@ -1,0 +1,30 @@
+# --- Basura de compilación ---
+**/build/
+**/debug/
+**/disassembly/
+*.o
+*.d
+*.elf
+
+# --- Archivos de configuración local de MPLAB ---
+**/nbproject/private/
+**/nbproject/Makefile-*
+**/nbproject/Package-*
+
+# --- Lógica de los .hex ---
+# 1. Ignoramos todo el contenido de las carpetas dist
+**/dist/**/*
+!**/dist/**/
+
+# 2. Hacemos una excepción para los archivos .hex en cualquier nivel
+!**/*.hex
+/CTO12.X/dist/
+/CTO13.X/dist/
+/CTO14.X/dist/
+/CTO15.X/dist/
+/CTO16.X/dist/
+/CTO15.1.X/dist/
+/CTO16.1.X/dist/
+/CTO17.X/dist/
+/CTO18.X/dist/
+/CTO19.X/dist/
