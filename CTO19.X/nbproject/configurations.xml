@@ -31,7 +31,7 @@
         <platformTool>Simulator</platformTool>
         <languageToolchain>pic-as</languageToolchain>
         <languageToolchainVersion>3.10</languageToolchainVersion>
-        <platform>2</platform>
+        <platform>3</platform>
       </toolsSet>
       <packs>
         <pack name="PIC18Fxxxx_DFP" vendor="Microchip" version="1.7.171"/>
@@ -1013,6 +1013,18 @@
                   value=""/>
         <property key="warningmessagebreakoptions.warningmessages" value="holdstate"/>
       </Tool>
+      <pic-as-assembler>
+        <property key="fmax-errors" value="20"/>
+        <property key="list-custom-assembler-options" value=""/>
+        <property key="list-custom-preprocessor-options" value=""/>
+        <property key="list-ddefine-symbols" value=""/>
+        <property key="list-define-symbols" value=""/>
+        <property key="list-include-directories" value=""/>
+        <property key="suppress-warnings" value="false"/>
+        <property key="verbose" value="false"/>
+        <property key="warning-level" value="0"/>
+        <property key="xassembler-with-cpp" value="true"/>
+      </pic-as-assembler>
       <pic-as-global>
         <property key="custom-dfp" value=""/>
         <property key="dfp-override" value="1"/>
