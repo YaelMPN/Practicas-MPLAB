@@ -167,23 +167,23 @@ REFRESCAR_DISPLAYS:
     CALL    UNIDADES 
     CALL    DECENAS 
     
-    ; 2. Leer Botón (Solo RE0 - Pull Down)
+    ;Leer Botón (Solo RE0 - Pull Down)
     BTFSS   PORTE, 0, A      ; ¿Botón presionado (1)?
     GOTO    DECIDIR          ; No -> salta a decidir
     
-    ; --- ¡Botón presionado! ---
-    BTG     ESTADO, 0, A     ; Toggle: Alterna el bit 0 (Start/Stop)
+    ; lo presiono :o
+    BTG     ESTADO, 0, A     ; Alterna el bit (Start/Stop)
     
 ESPERAR_SOLTAR:
     ; Anti-rebote: mantiene vivos los displays mientras el botón siga apretado
     CALL    UNIDADES
     CALL    DECENAS
     BTFSC   PORTE, 0, A      ; ¿El botón sigue presionado?
-    GOTO    ESPERAR_SOLTAR   ; Sí -> quédate atrapado aquí hasta que lo suelte
+    GOTO    ESPERAR_SOLTAR   ; Sí -> se queda aqui 
     
 DECIDIR:
-    ; 3. Decidir si el contador avanza
-    BTFSS   ESTADO, 0, A     ; ¿Estado = 1 (Run)?
+    ; Decidir si el contador avanza
+    BTFSS   ESTADO, 0, A     ; ¿Estado = 1 (avanzar)?
     GOTO    REFRESCAR_DISPLAYS ; No -> Sigue refrescando el mismo número
 
 CUENTA: 
