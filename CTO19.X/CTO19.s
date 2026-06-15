@@ -1,206 +1,177 @@
- /* 
-//////////////////////////////////////////////////////////////////////////// 
+/* //////////////////////////////////////////////////////////////////////////// 
      CTO19.s
 Pérez Nava Yael Mauricio
 Fecha de Compilacion: 12/05/26
-Programa:  el circuito muestra en exhibidores de 7 segmentos multi- 
-plexados, EL CONTEO ASC 0-99 con botones para iniciar y parar el contador
-*/
+Programa: Conteo ASC 0-99 multiplexado con botones de Start/Stop.
 //////////////////////////////////////////////////////////////////////////// 
+*/ 
  
-PROCESSOR 18F4550 ;DISPOSITIVO A PROGRAMAR 
-;////////////////////////////////////////////////////////////////////////////// 
-PALABRA_DE_CONFIGURACION: 
-; PIC18F4550 Configuration Bit Settings
-  CONFIG  PLLDIV = 1
-  CONFIG  CPUDIV = OSC1_PLL2
-  CONFIG  USBDIV = 1
-  CONFIG  FOSC = INTOSCIO_EC
-  CONFIG  FCMEN = OFF
-  CONFIG  IESO = OFF
-  CONFIG  PWRT = ON
-  CONFIG  BOR = OFF
-  CONFIG  BORV = 3
-  CONFIG  VREGEN = OFF
-  CONFIG  WDT = OFF
-  CONFIG  WDTPS = 32768
-  CONFIG  CCP2MX = ON
-  CONFIG  PBADEN = OFF
-  CONFIG  LPT1OSC = OFF
-  CONFIG  MCLRE = ON
-  CONFIG  STVREN = ON
-  CONFIG  LVP = OFF
-  CONFIG  ICPRT = OFF
-  CONFIG  XINST = OFF
-  CONFIG  CP0 = OFF
-  CONFIG  CP1 = OFF
-  CONFIG  CP2 = OFF
-  CONFIG  CP3 = OFF
-  CONFIG  CPB = OFF
-  CONFIG  CPD = OFF
-  CONFIG  WRT0 = OFF
-  CONFIG  WRT1 = OFF
-  CONFIG  WRT2 = OFF
-  CONFIG  WRT3 = OFF
-  CONFIG  WRTC = OFF
-  CONFIG  WRTB = OFF
-  CONFIG  WRTD = OFF
-  CONFIG  EBTR0 = OFF
-  CONFIG  EBTR1 = OFF
-  CONFIG  EBTR2 = OFF
-  CONFIG  EBTR3 = OFF
-  CONFIG  EBTRB = OFF
+PROCESSOR 18F4550 
+
+;---- PALABRA DE CONFIGURACIÓN ----
+  CONFIG  PLLDIV = 1, CPUDIV = OSC1_PLL2, USBDIV = 1
+  CONFIG  FOSC = INTOSCIO_EC ; Oscilador interno, pines RA6 y RA7 como E/S
+  CONFIG  FCMEN = OFF, IESO = OFF, PWRT = ON, BOR = OFF, BORV = 3
+  CONFIG  VREGEN = OFF, WDT = OFF, WDTPS = 32768, CCP2MX = ON
+  CONFIG  PBADEN = OFF       ; PORTB como digital (importante para los displays)
+  CONFIG  LPT1OSC = OFF, MCLRE = ON, STVREN = ON, LVP = OFF, ICPRT = OFF
+  CONFIG  XINST = OFF, CP0 = OFF, CP1 = OFF, CP2 = OFF, CP3 = OFF, CPB = OFF
+  CONFIG  CPD = OFF, WRT0 = OFF, WRT1 = OFF, WRT2 = OFF, WRT3 = OFF, WRTC = OFF
+  CONFIG  WRTB = OFF, WRTD = OFF, EBTR0 = OFF, EBTR1 = OFF, EBTR2 = OFF
+  CONFIG  EBTR3 = OFF, EBTRB = OFF
 
 #include <xc.inc>
-/*///////////////////////////////////////////////////////////////////////////// */ 
-DECLARAR_VARIABLES:   
+
+;---- DECLARACIÓN DE VARIABLES ----   
 PSECT UDATA_ACS 
-UNIDAD: DS 1 
-DECENA: DS 1 
-CONTEO_5:DS 1 
-CONTEO_1:DS 1 
-ESTADO: DS 1
-/////////////////////////////////////////////////////////////////////////////// 
-VECTOR_RESET: 
+UNIDAD:   DS 1   ; Guarda el valor de las unidades (0-9)
+DECENA:   DS 1   ; Guarda el valor de las decenas (0-9)
+CONTEO_5: DS 1   
+CONTEO_1: DS 1   
+ESTADO:   DS 1   ; Bit 0 controla: 1 = Marcha, 0 = Paro
+ 
+;---- VECTOR DE RESET ----
 PSECT CODE,RELOC=2,ABS 
 ORG 0x00
-GOTO INICIO
-/////////////////////////////////////////////////////////////////////////////// 
-PROGRAMA_PRINCIPAL: 
+GOTO INICIO      
+ 
+;---- PROGRAMA PRINCIPAL ----
 PSECT CODE,RELOC=2 
 ORG 0X04
 
+
 TABLAN: 
-ADDWF   PCL,F,A
-RETLW   0XFC //0  
-RETLW   0X60 //1  
-RETLW   0XDA //2  
-RETLW   0XF2 //3  
-RETLW   0X66 //4  
-RETLW   0XB6 //5  
-RETLW   0XBE //6  
-RETLW   0XE0 //7 
-RETLW   0XFE //8 
-RETLW   0XF6 //9 
+    ADDWF   PCL,F,A  ;salto
+    RETLW   0XFC     ; 0  
+    RETLW   0X60     ; 1  
+    RETLW   0XDA     ; 2  
+    RETLW   0XF2     ; 3  
+    RETLW   0X66     ; 4  
+    RETLW   0XB6     ; 5  
+    RETLW   0XBE     ; 6  
+    RETLW   0XE0     ; 7 
+    RETLW   0XFE     ; 8 
+    RETLW   0XF6     ; 9 
 
 DECODIFICAR1: 
-    RLNCF   WREG,F,A 
-    CALL    TABLAN 
+    RLNCF   WREG,F,A ; Multiplica por 2 el índice por ajuste 
+    CALL    TABLAN  
     RETURN 
  
+; Rutina de retardo de 5ms 
 DELAY_5mS: 
-    MOVLW 5 
-    MOVWF CONTEO_5,A 
+    MOVLW   5 
+    MOVWF   CONTEO_5,A 
 DELAY_1mS: 
-    MOVLW 160 
-    MOVWF CONTEO_1,A 
+    MOVLW   160 
+    MOVWF   CONTEO_1,A 
 ASK: 
-    DECFSZ CONTEO_1,F,A 
-    GOTO ASK 
-    DECFSZ CONTEO_5,F,A 
-    GOTO DELAY_1mS 
+    DECFSZ  CONTEO_1,F,A ; ¿Llegó a 0 el interno?
+    GOTO    ASK          ; No -> Repite bucle interno
+    DECFSZ  CONTEO_5,F,A ; ¿Llegó a 0 el externo?
+    GOTO    DELAY_1mS    ; No -> Reinicia bucle interno
     RETURN 
 
+; Retardo de 500ms usando Timer0 (Sin apagar display)
 DELAY_500mS: 
-    MOVLW  0XE2 
-    MOVWF  TMR0H,A 
-    MOVLW  0XF7 
-    MOVWF  TMR0L,A 
+    MOVLW   0XE2 
+    MOVWF   TMR0H,A      
+    MOVLW   0XF7 
+    MOVWF   TMR0L,A      
 ASKF: 
-    CALL    DECENAS 
-    CALL    UNIDADES 
-    BTFSS   INTCON,2,A 
-    GOTO    ASKF 
-    BCF     INTCON,2,A 
+    CALL    DECENAS      
+    CALL    UNIDADES     
+    BTFSS   INTCON,2,A   ; ¿Ya desbordó el Timer0? (TMR0IF)
+    GOTO    ASKF         ; No -> Sigue refrescando pantallas
+    BCF     INTCON,2,A   ; Sí -> Limpia la bandera de sobreflujo
     RETURN 
      
 DECENAS: 
-    MOVF    DECENA,W,A 
-    CALL    DECODIFICAR1 
-    CALL    DECENASD 
-    CALL    DELAY_5mS 
+    MOVF    DECENA,W,A   ; Carga valor numérico de la decena
+    CALL    DECODIFICAR1 ; Convierte a 7 segmentos
+    CALL    DECENASD     ; Activa hardware de decenas
+    CALL    DELAY_5mS    ; Muestra por 5ms
     RETURN 
      
 UNIDADES:     
-    MOVF    UNIDAD,W,A 
-    CALL    DECODIFICAR1 
-    CALL    UNIDADESD 
-    CALL    DELAY_5mS 
+    MOVF    UNIDAD,W,A   ; Carga valor numérico de la unidad
+    CALL    DECODIFICAR1 ; Convierte a 7 segmentos
+    CALL    UNIDADESD    ; Activa hardware de unidades
+    CALL    DELAY_5mS    ; Muestra por 5ms
     RETURN 
      
 DECENASD: 
-    CLRF    LATC,A 
-    BSF     LATC,1,A 
-    MOVWF   LATB,A 
+    CLRF    LATC,A       ; Apaga displays 
+    BSF     LATC,1,A     ; Enciende display de Decenas (RC1)
+    MOVWF   LATB,A       ; Envía los segmentos al Puerto B
     RETURN 
      
 UNIDADESD:     
-    CLRF    LATC,A 
-    BSF     LATC,0,A 
-    MOVWF   LATB,A 
+    CLRF    LATC,A       ; Apaga displays
+    BSF     LATC,0,A     ; Enciende display de Unidades (RC0)
+    MOVWF   LATB,A       ; Envía los segmentos al Puerto B
     RETURN 
       
+
 INICIO: 
-    SETF    TRISA,A 
+    SETF    TRISA,A      ; Puerto A como entradas
     CLRF    PORTA,A 
     MOVLW   00001111B 
-    MOVWF   ADCON1,A 
+    MOVWF   ADCON1,A     ; Configura pines como digitales
     MOVLW   00000111B 
-    MOVWF   CMCON,A 
+    MOVWF   CMCON,A      ; Desactiva comparadores analógicos
     MOVLW   01010000B 
-    MOVWF   OSCCON,A 
-    CLRF    TRISB,A 
+    MOVWF   OSCCON,A     ; Configura oscilador interno a 4 MHz
+    CLRF    TRISB,A      ; Puerto B como salidas (Displays)
     CLRF    LATB,A 
     CLRF    PORTC,A 
-    BCF     TRISC,0,A 
-    BCF     TRISC,1,A 
+    BCF     TRISC,0,A    ; RC0 como salida (Habilitador Unidades) este y el de abajo van conectados al comun de cada display
+    BCF     TRISC,1,A    ; RC1 como salida (Habilitador Decenas)
     MOVLW   10010011B 
-    MOVWF   T0CON,A 
-    SETF    TRISE,A     ; RE0 y RE1 como Entradas
-    CLRF    ESTADO,A    ; Inicia en estado STOP (0) 
+    MOVWF   T0CON,A      ; Timer0: ON, 16 bits, Prescaler 1:16
+    SETF    TRISE,A      ; Puerto E como entradas (Botones)
+    CLRF    ESTADO,A     ; Inicializa en modo STOP (0)
 
+;---- BUCLE PRINCIPAL ----
 MAIN:  
-    CLRF    UNIDAD,A 
-    CLRF    DECENA,A 
+    CLRF    UNIDAD,A     ; Resetea unidades a 0
+    CLRF    DECENA,A     ; Resetea decenas a 0 
      
 REFRESCAR_DISPLAYS:
-    CALL    UNIDADES 
-    CALL    DECENAS 
+    CALL    UNIDADES     ; Muestra unidad actual
+    CALL    DECENAS      ; Muestra decena actual
     
-    ;Leer Botón (Solo RE0 - Pull Down)
-    BTFSS   PORTE, 0, A      ; ¿Botón presionado (1)?
-    GOTO    DECIDIR          ; No -> salta a decidir
+    ; --- Leer Botón de Control (RE0) ---
+    BTFSS   PORTE, 0, A  ; ¿Botón presionado? (1 lógico)
+    GOTO    DECIDIR      ; No -> Comprueba si debe contar
     
-    ; lo presiono :o
-    BTG     ESTADO, 0, A     ; Alterna el bit (Start/Stop)
+    ; Acción al presionar el botón
+    BTG     ESTADO, 0, A ; Invierte bit de marcha/paro (Toggle)
     
 ESPERAR_SOLTAR:
-    ; Anti-rebote: mantiene vivos los displays mientras el botón siga apretado
-    CALL    UNIDADES
+    CALL    UNIDADES     ; Mantiene vivo el display mientras se presiona
     CALL    DECENAS
-    BTFSC   PORTE, 0, A      ; ¿El botón sigue presionado?
-    GOTO    ESPERAR_SOLTAR   ; Sí -> se queda aqui 
+    BTFSC   PORTE, 0, A  ; ¿Sigue presionado?
+    GOTO    ESPERAR_SOLTAR ; Sí -> Espera hasta que se suelte 
     
 DECIDIR:
-    ; Decidir si el contador avanza
-    BTFSS   ESTADO, 0, A     ; ¿Estado = 1 (avanzar)?
-    GOTO    REFRESCAR_DISPLAYS ; No -> Sigue refrescando el mismo número
+    BTFSS   ESTADO, 0, A ; ¿El sistema está en modo Marcha (1)?
+    GOTO    REFRESCAR_DISPLAYS ; No (0) -> Mantiene el número estático
 
+; ---- LÓGICA DEL CONTADOR ----
 CUENTA: 
-    ; Si Estado = 1, esperamos el medio segundo y avanzamos
-    CALL    DELAY_500mS 
+    CALL    DELAY_500mS  ; Espera 0.5 segundos manteniendo encendido el display
     
-    INCF    UNIDAD,F,A 
+    INCF    UNIDAD,F,A   ; Incrementa las unidades
     MOVLW   9 
-    CPFSGT  UNIDAD,A
-    GOTO    REFRESCAR_DISPLAYS 
+    CPFSGT  UNIDAD,A     ; ¿Unidades > 9?
+    GOTO    REFRESCAR_DISPLAYS ; No -> Sigue mostrando el número
     
-    CLRF    UNIDAD,A 
-    INCF    DECENA,F,A 
+    CLRF    UNIDAD,A     ; Sí -> Resetea unidades a 0
+    INCF    DECENA,F,A   ; Incrementa las decenas
     MOVLW   10 
-    CPFSLT  DECENA,A
-    GOTO    MAIN 
-    GOTO    REFRESCAR_DISPLAYS 
+    CPFSLT  DECENA,A     ; ¿Decenas < 10?
+    GOTO    MAIN         ; No (Llegó a 99+1) -> Resetea todo el contador a 00
+    GOTO    REFRESCAR_DISPLAYS ; Sí -> Continúa el conteo normal
 
     END
-
